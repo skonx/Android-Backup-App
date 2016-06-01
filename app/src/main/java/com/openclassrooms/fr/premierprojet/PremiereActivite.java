@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
@@ -15,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 /**
- * Main activity
+ * Main activity.
  *
  * @author jsie
  */
@@ -25,13 +26,16 @@ public class PremiereActivite extends AppCompatActivity {
      * This string is the key used in the second activity where the number of running process
      * is specified
      */
-    public final static String TOTAL_FILES = "TOTAL_FILES";
+    public final static String EXTRA_TOTAL_FILES = "EXTRA_TOTAL_FILES";
+
+    public final static String EXTRA_BACKUP_SERVICE = "BACKUP_SERVICE";
 
     /**
      * The value used to define the origin of the request towards the second activity
      */
     private final static int requestSecondActivity = 1;
 
+    private final static int requestBackupActivity = 2;
 
     /**
      * The central text zone where message are displayed
@@ -44,6 +48,13 @@ public class PremiereActivite extends AppCompatActivity {
         setContentView(R.layout.activity_premiere_activite);
 
         textView = (TextView) findViewById(R.id.textView);
+
+        /*Log.i("HOST = ", Build.HOST);
+        Log.i("DEVICE = ",Build.DEVICE);
+        Log.i("HARDWARE = ",Build.HARDWARE);
+        Log.i("MODEL = ", Build.MODEL);
+        Log.i("PRODUCT = ",Build.PRODUCT);
+        Log.i("USER = ",Build.USER);*/
 
         /**
          * restore the data saved in onRetainNonConfigurationInstance()
@@ -110,12 +121,6 @@ public class PremiereActivite extends AppCompatActivity {
         startActivity(sendListProcess);*/
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == requestSecondActivity)
-            if (resultCode == RESULT_OK)
-                Toast.makeText(this, data.getStringExtra(TOTAL_FILES) + " " + getResources().getString(R.string.files), Toast.LENGTH_SHORT).show();
-    }
 
     /**
      * Will open a preferences form where the user will be able to define and store its first name.
@@ -140,10 +145,43 @@ public class PremiereActivite extends AppCompatActivity {
         editor.apply();
     }
 
+    /**
+     * Will leave the application if Key Back is pressed on the main activity.
+     * Threads will be interrupted because they are daemons.
+     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK)
-            System.exit(0);
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == requestSecondActivity)
+            if (resultCode == RESULT_OK)
+                Toast.makeText(this, data.getStringExtra(EXTRA_TOTAL_FILES) + " " + getResources().getString(R.string.files), Toast.LENGTH_SHORT).show();
+
+        if (requestCode == requestBackupActivity) {
+            if (data != null) {
+                if (resultCode != RESULT_OK)
+                    Log.w(EXTRA_BACKUP_SERVICE, "Something goes wrong...");
+                else
+                    Log.i(EXTRA_BACKUP_SERVICE, "** Backup Service finished with success **");
+            }
+        }
+    }
+
+    /**
+     * TODO : implement backup method
+     * Will backup the different device's medias on samba/cifs sharing.
+     * Not yet implemented.
+     *
+     * @param v the Button associated to the action
+     */
+    public void backup(View v) {
+        Intent intentBackup = new Intent(this, BackupService.class);
+        int value = 0;
+        intentBackup.putExtra(EXTRA_BACKUP_SERVICE, value);
+
+        startService(intentBackup);
     }
 }
